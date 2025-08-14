@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from .models import MenuItem, Booking
 from .serializers import MenuItemSerializer, BookingSerializer
-
+from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.renderers import TemplateHTMLRenderer
 
 # Create your views here.
 
@@ -11,26 +12,47 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 def index(request):
     return render(request, 'index.html', {})
 
+def about(request):
+    return render(request, 'about.html')
+
 # api
 class MenuItemsView(generics.ListCreateAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'menu.html' # Specify your HTML template
 
     def get_permissions(self):
         permission_class = [IsAuthenticated]
         if self.request.method != 'GET':
             permission_class.append(IsAdminUser)
         return [permission() for permission in permission_class]
+    def get(self, request, *args, **kwargs):
+        queryset = MenuItem.objects.all()
+        print(queryset)
+        #self.object = self.get_object()
+        return Response({'menu': queryset})
 
 class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'menu_item.html' # Specify your HTML template
 
     def get_permissions(self):
         permission_class = [IsAuthenticated]
         if self.request.method != 'GET':
             permission_class = [IsAdminUser]
         return [permission() for permission in permission_class]
+
+    def get(self, request, *args, **kwargs):
+        custom_id = self.kwargs.get(self.lookup_field)
+        #print(custom_id)
+        data = MenuItem.objects.get(pk=custom_id)
+        #print(data)
+        return Response({'menu_item': data})
+
+
     
 class BookingView(generics.ListCreateAPIView):
     queryset = Booking.objects.all()
